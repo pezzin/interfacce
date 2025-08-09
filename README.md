@@ -32,5 +32,9 @@ A browser-native chromatic landscape reacting to **voice**, **movement**, and **
 - Microphone/Camera require HTTPS or `localhost` and a user gesture (button click).
 - Some browser previews (iframes) block permissions; open the page directly.
 
+**DEMO**
+- A working demo is visible at the following URL:
+- https://interfacce.vercel.app
+
 **Credits**
 Design & code: Christian Pezzin · Project: *INTERFACCE — Chromatic Field*
