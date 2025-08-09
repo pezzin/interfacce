@@ -1,25 +1,9 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  
   <title>INTERFACCE — Chromatic Field</title>
-  <meta name="description" content="A light landscape reacting to voice, movement and presence. Move the mouse: refraction. Speak: chromas. Approach the webcam: temperature.">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="/favicon.png" />
-
-  <!-- Open Graph -->
-  <meta property="og:title" content="INTERFACCE — Chromatic Field" />
-  <meta property="og:description" content="A light landscape reacting to voice, movement and presence." />
-  <meta property="og:image" content="/og-preview.png" />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://interfacce.vercel.app/" />
-
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="INTERFACCE — Chromatic Field" />
-  <meta name="twitter:description" content="A light landscape reacting to voice, movement and presence." />
-  <meta name="twitter:image" content="/og-preview.png" />
   <style>
     :root {
       --bg: #0b0b0c;
@@ -122,30 +106,43 @@
 
     let lang = (navigator.language||'en').toLowerCase().startsWith('it') ? 'it' : 'en';
 
-    function setLang(l){
-      lang = l in I18N ? l : 'en';
-      document.body.setAttribute('data-lang', lang);
+    function updateUI() {
       const t = I18N[lang];
-      const el = (id) => document.getElementById(id);
-      if (el('title')) el('title').textContent = t.title;
-      if (el('desc')) el('desc').innerHTML = t.desc;
-      if (el('micBtn')) el('micBtn').textContent = t.micEnable;
-      if (el('camBtn')) el('camBtn').textContent = t.camEnable;
-      if (el('paletteBtn')) el('paletteBtn').textContent = t.palette;
-      if (el('saveBtn')) el('saveBtn').textContent = t.save;
-      if (el('pillMute')) el('pillMute').textContent = t.pillMute;
-      if (el('pillHelp')) el('pillHelp').textContent = t.pillHelp;
-      if (el('legend')) el('legend').textContent = t.legend;
-      const warn = document.getElementById('warn');
+      const $ = (id) => document.getElementById(id);
+
+      // Static texts
+      $('title').textContent = t.title;
+      $('desc').innerHTML   = t.desc;
+      $('paletteBtn').textContent = t.palette;
+      $('saveBtn').textContent    = t.save;
+      $('pillMute').textContent   = t.pillMute;
+      $('pillHelp').textContent   = t.pillHelp;
+      $('legend').textContent     = t.legend;
+
+      // Dynamic labels (state)
+      const micOn = audioEnabled && (!audioCtx || audioCtx.state !== 'suspended');
+      $('micBtn').textContent = micOn ? t.micActive : t.micEnable;
+      $('camBtn').textContent = videoEnabled ? t.camActive : t.camEnable;
+
+      // Warning banner
+      const warn = $('warn');
       if (warn && warn.style.display === 'block') {
         const msgs = [];
         if (window.top !== window.self) msgs.push(I18N[lang].warnIframe);
         if (!window.isSecureContext && location.hostname !== 'localhost') msgs.push(I18N[lang].warnHttps);
         warn.innerHTML = msgs.join(' ');
       }
+
+      // Language switch buttons
       document.querySelectorAll('.lang-btn').forEach(b=>{
-        b.classList.toggle('active', b.dataset.lang===lang);
+        b.classList.toggle('active', b.dataset.lang === lang);
       });
+    }
+
+    function setLang(l){
+      lang = l in I18N ? l : 'en';
+      document.body.setAttribute('data-lang', lang);
+      updateUI();
     }
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -217,7 +214,7 @@
       src.connect(analyser);
       audioEnabled = true;
       document.getElementById('micDot').classList.add('on');
-      document.getElementById('micBtn').textContent = I18N[lang].micActive;
+      updateUI();
     } catch(err){ console.warn('Mic denied', err); }
   }
 
@@ -248,8 +245,8 @@
       v.srcObject = stream; v.play();
       videoEnabled = true;
       document.getElementById('camDot').classList.add('on');
-      document.getElementById('camBtn').textContent = I18N[lang].camActive;
       v.style.display = 'block';
+      updateUI();
     } catch(err){ console.warn('Cam denied', err); }
   }
 
@@ -345,6 +342,7 @@
     if(e.key === 'm' || e.key === 'M') {
       if(audioCtx && audioCtx.state === 'running') audioCtx.suspend();
       else if(audioCtx) audioCtx.resume();
+      updateUI();
     }
     if(e.key === 'c' || e.key === 'C') paletteIndex = (paletteIndex+1) % palettes.length;
     if(e.key === 's' || e.key === 'S') saveFrame();
